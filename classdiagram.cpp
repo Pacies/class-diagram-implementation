@@ -145,8 +145,11 @@ int main() {
         {"DEF", "Pencil", 10},
         {"GHI", "Ballpen", 35},
         {"JKL", "Eraser", 5},
-        {"MNOP", "Tape", 25},
-        {"QRS", "Notebook", 15}
+        {"MNO", "Tape", 25},
+        {"PQR", "Notebook", 15},
+        {"STU", "Ruler", 10},
+        {"VWX", "Mouse", 20},
+        {"YZ", "Keyboard", 25},
     };
 
     ShoppingCart cart;
