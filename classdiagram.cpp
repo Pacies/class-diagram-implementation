@@ -34,7 +34,7 @@ public:
                 return;
             }
         }
-        items.emplace_back(product, quantity);
+        items.push_back(CartItem(product, quantity));
     }
 
     void viewCart() const {
@@ -67,16 +67,41 @@ public:
     }
 };
 
+class Customer {
+public:
+    string name;
+    string address;
+    string deliveryDate;
+
+    void getDetails() {
+        cin.ignore();
+        cout << "Enter your name: ";
+        getline(cin, name);
+        cout << "Enter your address: ";
+        getline(cin, address);
+        cout << "Enter preferred delivery date: ";
+        getline(cin, deliveryDate);
+    }
+
+    void displayDetails() const {
+        cout << "Customer Name: " << name << endl;
+        cout << "Address: " << address << endl;
+        cout << "Delivery Date: " << deliveryDate << endl;
+    }
+};
+
 class Order {
 public:
     int orderID;
     vector<CartItem> items;
     float totalAmount;
+    Customer customer;
 
-    Order(int id, const vector<CartItem> &items, float total) : orderID(id), items(items), totalAmount(total) {}
+    Order(int id, const vector<CartItem> &items, float total, const Customer &cust) : orderID(id), items(items), totalAmount(total), customer(cust) {}
 
     void displayOrderDetails() const {
         cout << "\nOrder ID: " << orderID << endl;
+        customer.displayDetails();
         cout << "Total Amount: " << totalAmount << endl;
         cout << "Order Details:\n";
         cout << left << setw(12) << "Product ID" << setw(12) << "Name" << setw(8) << "Price" << "Quantity" << endl;
@@ -95,11 +120,7 @@ void displayProducts(const vector<Product>& products) {
 }
 
 void clearScreen() {
-#ifdef _WIN32
     system("cls");
-#else
-    system("clear");
-#endif
 }
 
 string toLowerCase(const string& str) {
@@ -131,8 +152,9 @@ int main() {
     ShoppingCart cart;
     vector<Order> orders;
     int orderCount = 0;
+    bool myCondition = true;
 
-    while (true) {
+    while (myCondition) {
         cout << "\nMenu:\n1. View/Add Products\n2. View Shopping Cart\n3. View Orders\n4. Exit\n\nEnter your choice: ";
         int choice;
 
@@ -143,13 +165,13 @@ int main() {
             continue;
         }
 
-        if (choice != 1) clearScreen();
+        clearScreen();
 
         switch (choice) {
             case 1: {
                 displayProducts(products);
                 while (true) {
-                    cout << "\nEnter the product ID to add (or '0' to go back): ";
+                    cout << "\nEnter product ID to add (or '0' to go back): ";
                     string productId;
                     cin >> productId;
                     if (productId == "0") break;
@@ -180,7 +202,9 @@ int main() {
                     char checkoutChoice;
                     cin >> checkoutChoice;
                     if (tolower(checkoutChoice) == 'y') {
-                        orders.emplace_back(++orderCount, cart.getItems(), cart.calculateTotal());
+                        Customer customer;
+                        customer.getDetails();
+                        orders.push_back(Order(++orderCount, cart.getItems(), cart.calculateTotal(), customer));
                         cart.clearCart();
                         cout << "Checkout successful!\n";
                     }
@@ -189,18 +213,13 @@ int main() {
             }
 
             case 3:
-                if (orders.empty()) {
-                    cout << "No orders available.\n";
-                } else {
-                    for (size_t i = 0; i < orders.size(); ++i) {
-                        orders[i].displayOrderDetails();
-                    }
-                }
+                for (size_t i = 0; i < orders.size(); ++i) orders[i].displayOrderDetails();
                 break;
 
             case 4:
                 cout << "Exiting program.\n";
-                return 0;
+                myCondition = false;
+                break;
 
             default:
                 cout << "Invalid choice. Try again.\n";
