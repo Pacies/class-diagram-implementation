@@ -37,6 +37,21 @@ public:
         items.push_back(CartItem(product, quantity));
     }
 
+    void removeProduct(const string &productId, int quantity) {
+        for (size_t i = 0; i < items.size(); ++i) {
+            if (items[i].product.id == productId) {
+                if (quantity >= items[i].quantity) {
+                    items.erase(items.begin() + i);  // Remove if quantity is zero or less
+                } else {
+                    items[i].quantity -= quantity;  // Decrease quantity
+                }
+                cout << "Product updated successfully!\n";
+                return;
+            }
+        }
+        cout << "Product not found in cart.\n";
+    }
+
     void viewCart() const {
         if (items.empty()) {
             cout << "\nYour cart is empty.\n";
@@ -48,12 +63,14 @@ public:
         for (size_t i = 0; i < items.size(); ++i) {
             cout << left << setw(12) << items[i].product.id << setw(12) << items[i].product.name << setw(8) << items[i].product.price << items[i].quantity << endl;
         }
+
+        cout << "\nTotal Amount: " << calculateTotal() << "\n";
     }
 
     float calculateTotal() const {
         float total = 0;
-        for (size_t i = 0; i < items.size(); ++i) {
-            total += items[i].product.price * items[i].quantity;
+        for (const auto &item : items) {
+            total += item.product.price * item.quantity;
         }
         return total;
     }
@@ -64,79 +81,25 @@ public:
 
     void clearCart() {
         items.clear();
+        cout << "Cart has been cleared.\n";
     }
 };
 
-class Customer {
-public:
-    string name;
-    string address;
-    string deliveryDate;
-
-    void getDetails() {
-        cin.ignore();
-        cout << "Enter your name: ";
-        getline(cin, name);
-        cout << "Enter your address: ";
-        getline(cin, address);
-        cout << "Enter preferred delivery date: ";
-        getline(cin, deliveryDate);
-    }
-
-    void displayDetails() const {
-        cout << "Customer Name: " << name << endl;
-        cout << "Address: " << address << endl;
-        cout << "Delivery Date: " << deliveryDate << endl;
-    }
-};
-
-class Order {
-public:
-    int orderID;
-    vector<CartItem> items;
-    float totalAmount;
-    Customer customer;
-
-    Order(int id, const vector<CartItem> &items, float total, const Customer &cust) : orderID(id), items(items), totalAmount(total), customer(cust) {}
-
-    void displayOrderDetails() const {
-        cout << "\nOrder ID: " << orderID << endl;
-        customer.displayDetails();
-        cout << "Total Amount: " << totalAmount << endl;
-        cout << "Order Details:\n";
-        cout << left << setw(12) << "Product ID" << setw(12) << "Name" << setw(8) << "Price" << "Quantity" << endl;
-        for (size_t i = 0; i < items.size(); ++i) {
-            cout << left << setw(12) << items[i].product.id << setw(12) << items[i].product.name << setw(8) << items[i].product.price << items[i].quantity << endl;
+Product* findProductById(vector<Product>& products, const string& id) {
+    for (auto& product : products) {
+        if (product.id == id) {
+            return &product;
         }
     }
-};
+    return nullptr;
+}
 
 void displayProducts(const vector<Product>& products) {
     cout << "\nAvailable Products:\n";
     cout << left << setw(12) << "Product ID" << setw(12) << "Name" << "Price" << endl;
-    for (size_t i = 0; i < products.size(); ++i) {
-        cout << left << setw(12) << products[i].id << setw(12) << products[i].name << products[i].price << endl;
+    for (const auto& product : products) {
+        cout << left << setw(12) << product.id << setw(12) << product.name << product.price << endl;
     }
-}
-
-void clearScreen() {
-    system("cls");
-}
-
-string toLowerCase(const string& str) {
-    string lowerStr = str;
-    transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
-    return lowerStr;
-}
-
-Product* findProductById(vector<Product>& products, const string& id) {
-    string lowerId = toLowerCase(id);
-    for (size_t i = 0; i < products.size(); ++i) {
-        if (toLowerCase(products[i].id) == lowerId) {
-            return &products[i];
-        }
-    }
-    return nullptr;
 }
 
 int main() {
@@ -153,12 +116,10 @@ int main() {
     };
 
     ShoppingCart cart;
-    vector<Order> orders;
-    int orderCount = 0;
     bool myCondition = true;
 
     while (myCondition) {
-        cout << "\nMenu:\n1. View/Add Products\n2. View Shopping Cart\n3. View Orders\n4. Exit\n\nEnter your choice: ";
+        cout << "\nMenu:\n1. View/Add Products\n2. View Shopping Cart\n3. Remove Items from Cart\n4. Clear Cart\n5. Exit\n\nEnter your choice: ";
         int choice;
 
         if (!(cin >> choice)) {
@@ -167,8 +128,6 @@ int main() {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             continue;
         }
-
-        clearScreen();
 
         switch (choice) {
             case 1: {
@@ -198,28 +157,37 @@ int main() {
                 break;
             }
 
-            case 2: {
+            case 2:
+                cart.viewCart();
+                break;
+
+            case 3: {
                 cart.viewCart();
                 if (!cart.getItems().empty()) {
-                    cout << "Do you want to check out? (Y/N): ";
-                    char checkoutChoice;
-                    cin >> checkoutChoice;
-                    if (tolower(checkoutChoice) == 'y') {
-                        Customer customer;
-                        customer.getDetails();
-                        orders.push_back(Order(++orderCount, cart.getItems(), cart.calculateTotal(), customer));
-                        cart.clearCart();
-                        cout << "Checkout successful!\n";
+                    cout << "\nEnter product ID to remove (or '0' to go back): ";
+                    string productId;
+                    cin >> productId;
+                    if (productId == "0") break;
+
+                    cout << "Enter quantity to remove: ";
+                    int quantity;
+                    if (!(cin >> quantity) || quantity <= 0) {
+                        cout << "Invalid quantity. Try again.\n";
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        continue;
                     }
+
+                    cart.removeProduct(productId, quantity);
                 }
                 break;
             }
 
-            case 3:
-                for (size_t i = 0; i < orders.size(); ++i) orders[i].displayOrderDetails();
+            case 4:
+                cart.clearCart();
                 break;
 
-            case 4:
+            case 5:
                 cout << "Exiting program.\n";
                 myCondition = false;
                 break;
@@ -228,4 +196,4 @@ int main() {
                 cout << "Invalid choice. Try again.\n";
         }
     }
-}
+} 
